@@ -1,0 +1,12 @@
+{
+  "port": 8089,
+  "debug": {
+    "is_debug": true,
+    "db_name": "icecream_base",
+    "db_uri": "mongodb://localhost:27017"
+  },
+  "main": {
+    "db_name": "icecream_base",
+    "db_uri": "mongodb://localhost:27017"
+  }
+}
