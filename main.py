@@ -25,7 +25,7 @@ if __name__ == "__main__":
         reload=True if is_debug else False,
         host="127.0.0.1",
         port=config.get("port", 8000),
-        log_level="info" if is_debug else "warn",
+        log_level="info" if is_debug else "warning",
     )
 
     server = uvicorn.Server(server_config)

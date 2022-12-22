@@ -158,7 +158,7 @@ async def add_translation_v1(data: AddTranslation, res: Response):
     )
 
     await db_client[data.db][data.scheme_name].update_one(
-        {"_id": "_meta"}, {"$set": {"last_update": get_timestamp()}}
+        {"_id": "_meta"}, {"$set": {"last_update": get_timestamp()}}, True
     )
 
     return {"message": "ok"}
