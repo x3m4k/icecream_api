@@ -178,3 +178,15 @@ async def get_global_settings_v1(data: GetGlobalSettings, res: Response):
             )
         ),
     }
+
+
+@app.get("/v1/aggregate/")
+async def aggregate_v1(data: Aggregate, res: Response):
+    if data.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    db_response = db_client[data.db][data.collection].aggregate(data.aggregate)
+    db_response = await db_response.to_list(length=data.length)
+
+    return {"message": "ok", "response": db_response}

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Union, List
+from typing import Union, List, Optional
 
 
 class UpdateBody(BaseModel):
@@ -55,3 +55,9 @@ class AddTranslation(BaseModel):
 class GetGlobalSettings(BaseModel):
     db: str
     fields: Union[None, List[str]] = None
+
+
+class Aggregate(BaseModel):
+    db: str
+    aggregate: Union[list, tuple]
+    length: Optional[int]
