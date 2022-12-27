@@ -61,3 +61,4 @@ class Aggregate(BaseModel):
     db: str
     aggregate: Union[list, tuple]
     length: Optional[int]
+    to_int64_fields: Optional[List[str]] = []

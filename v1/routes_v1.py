@@ -2,7 +2,8 @@ from main import app
 from .models_v1 import *
 from database import client as db_client
 from fastapi import Response, status
-from libs.util import get_timestamp
+from libs.util import get_timestamp, walk_dict
+from bson.int64 import Int64
 
 
 FORBIDDEN_DB_NAMES = ["admin", "local", "config"]
@@ -180,11 +181,19 @@ async def get_global_settings_v1(data: GetGlobalSettings, res: Response):
     }
 
 
-@app.get("/v1/aggregate/")
+@app.post("/v1/aggregate/")
 async def aggregate_v1(data: Aggregate, res: Response):
     if data.db in FORBIDDEN_DB_NAMES:
         res.status_code = status.HTTP_400_BAD_REQUEST
         return {"message": "Wrong db name."}
+
+    for pt in data.to_int64_fields:
+
+        last_name = pt.rsplit(".", 1)[1]
+
+        container = walk_dict(data.aggregate, pt.rsplit(".", 1)[0])
+        obj = container.get(last_name)
+        container[last_name] = Int64(obj)
 
     db_response = db_client[data.db][data.collection].aggregate(data.aggregate)
     db_response = await db_response.to_list(length=data.length)
