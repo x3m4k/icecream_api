@@ -60,5 +60,6 @@ class GetGlobalSettings(BaseModel):
 class Aggregate(BaseModel):
     db: str
     aggregate: Union[list, tuple]
+    collection: str
     length: Optional[int]
     to_int64_fields: Optional[List[str]] = []

@@ -188,12 +188,13 @@ async def aggregate_v1(data: Aggregate, res: Response):
         return {"message": "Wrong db name."}
 
     for pt in data.to_int64_fields:
-
-        last_name = pt.rsplit(".", 1)[1]
-
-        container = walk_dict(data.aggregate, pt.rsplit(".", 1)[0])
-        obj = container.get(last_name)
-        container[last_name] = Int64(obj)
+        for cmd in data.aggregate:
+            last_name = pt.rsplit(".", 1)[1]
+            container = walk_dict(cmd, pt.rsplit(".", 1)[0], None)
+            if not container:
+                continue
+            obj = container.get(last_name)
+            container[last_name] = Int64(obj)
 
     db_response = db_client[data.db][data.collection].aggregate(data.aggregate)
     db_response = await db_response.to_list(length=data.length)
