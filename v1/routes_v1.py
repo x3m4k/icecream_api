@@ -4,6 +4,8 @@ from database import client as db_client
 from fastapi import Response, status
 from libs.util import get_timestamp, walk_dict
 from bson.int64 import Int64
+from bson.objectid import ObjectId
+import inspect
 
 
 FORBIDDEN_DB_NAMES = ["admin", "local", "config"]
@@ -71,7 +73,7 @@ async def update_user_v1(data: UpdateGuildUser, res: Response):
         for command in update:
             await db_client[data.db].users.update_one(
                 {"_id": data.user_id},
-                {"$" + command: update[command]},
+                {"$" + command.strip("$"): update[command]},
                 data.update.upsert,
             )
 
@@ -112,7 +114,7 @@ async def update_server_v1(data: UpdateGuildServer, res: Response):
     for command in fields_update:
         await db_client[data.db].servers.update_one(
             {"_id": data.guild_id},
-            {"$" + command: fields_update[command]},
+            {"$" + command.strip("$"): fields_update[command]},
             data.update.upsert,
         )
 
@@ -174,9 +176,12 @@ async def get_global_settings_v1(data: GetGlobalSettings, res: Response):
     return {
         "message": "ok",
         "response": (
-            await db_client[data.db]["global"].find_one(
-                {"_id": "settings"}, data.fields
+            (
+                await db_client[data.db]["global"].find_one(
+                    {"_id": "settings"}, data.fields
+                )
             )
+            or {}
         ),
     }
 
@@ -187,7 +192,7 @@ async def aggregate_v1(data: Aggregate, res: Response):
         res.status_code = status.HTTP_400_BAD_REQUEST
         return {"message": "Wrong db name."}
 
-    for pt in data.to_int64_fields:
+    for pt in data.to_int64_fields or []:
         for cmd in data.aggregate:
             last_name = pt.rsplit(".", 1)[1]
             container = walk_dict(cmd, pt.rsplit(".", 1)[0], None)
@@ -199,4 +204,52 @@ async def aggregate_v1(data: Aggregate, res: Response):
     db_response = db_client[data.db][data.collection].aggregate(data.aggregate)
     db_response = await db_response.to_list(length=data.length)
 
+    for obj in db_response:
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if isinstance(v, ObjectId):
+                    obj[k] = str(v)
+
     return {"message": "ok", "response": db_response}
+
+
+@app.post("/v1/count_documents/")
+async def count_documents_v1(data: CountDocuments, res: Response):
+    if data.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    return {
+        "message": "ok",
+        "response": await db_client[data.db][data.collection].count_documents(
+            data.pattern
+        ),
+    }
+
+
+# unsafe
+@app.post("/v1/query/")
+async def query_v1(query: DirectQuery, res: Response):
+    if query.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    if query.method.count(".") or query.method.count("__"):
+        return {"message": "Wrong method."}
+
+    method = getattr(db_client[query.db][query.collection], query.method)
+
+    response = method(*query.data)
+
+    if inspect.isawaitable(response):
+        response = await response
+    else:
+        response = await response.to_list(length=None)
+
+    if not isinstance(response, list):
+        try:
+            response = dict(response)
+        except:
+            response = {"empty": True}
+
+    return {"message": "ok", "response": response}

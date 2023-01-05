@@ -63,3 +63,29 @@ class Aggregate(BaseModel):
     collection: str
     length: Optional[int]
     to_int64_fields: Optional[List[str]] = []
+
+
+class CountDocuments(BaseModel):
+    db: str
+    pattern: dict
+    collection: str
+
+
+class DirectQuery(BaseModel):
+    """
+    Example:
+        db = "test"
+        collection = "users"
+        method = "find_one"
+        data = [{"_id": 123}]
+
+    Example 2:
+        ...
+        method = "update_one"
+        data = [{"_id": 123}, {"$set": {"balance": 0}}]
+    """
+
+    db: str
+    collection: str
+    method: str
+    data: list
