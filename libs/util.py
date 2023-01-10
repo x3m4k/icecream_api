@@ -27,6 +27,8 @@ def walk_dict(d, fields: str, default: Optional[Any] = None) -> Any:
     except AttributeError:
         if isinstance(d, type(EmptyElement)):
             return default
+        if isinstance(d, (tuple, list)):
+            return walk_dict(d[int(f)], fields, default=default)
         return d
 
     return walk_dict(obj, fields, default=default)
