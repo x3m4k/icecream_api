@@ -89,3 +89,4 @@ class DirectQuery(BaseModel):
     collection: str
     method: str
     data: list
+    to_int64_fields: Optional[List[str]] = []

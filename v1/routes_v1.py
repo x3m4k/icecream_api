@@ -3,7 +3,7 @@ from .models_v1 import *
 from database import client as db_client
 from fastapi import Response, status
 from libs.util import get_timestamp, walk_dict
-from bson.int64 import Int64
+import bson
 from bson.objectid import ObjectId
 import inspect
 
@@ -196,10 +196,12 @@ async def aggregate_v1(data: Aggregate, res: Response):
         for cmd in data.aggregate:
             last_name = pt.rsplit(".", 1)[1]
             container = walk_dict(cmd, pt.rsplit(".", 1)[0], None)
+
             if not container:
                 continue
+
             obj = container.get(last_name)
-            container[last_name] = Int64(obj)
+            container[last_name] = bson.int64.Int64(obj)
 
     db_response = db_client[data.db][data.collection].aggregate(data.aggregate)
     db_response = await db_response.to_list(length=data.length)
@@ -237,6 +239,21 @@ async def query_v1(query: DirectQuery, res: Response):
     if query.method.count(".") or query.method.count("__"):
         return {"message": "Wrong method."}
 
+    for pt in query.to_int64_fields or []:
+        for cmd in query.data:
+            if pt.count(".") > 0:
+                last_name = pt.rsplit(".", 1)[1]
+                container = walk_dict(cmd, pt.rsplit(".", 1)[0], None)
+
+                if not container:
+                    continue
+
+                obj = container.get(last_name)
+
+                container[last_name] = bson.int64.Int64(obj)
+            else:
+                cmd[pt] = bson.int64.Int64(cmd[pt])
+
     method = getattr(db_client[query.db][query.collection], query.method)
 
     response = method(*query.data)
@@ -246,7 +263,14 @@ async def query_v1(query: DirectQuery, res: Response):
     else:
         response = await response.to_list(length=None)
 
-    if not isinstance(response, list):
+    if isinstance(response, dict):
+        for obj in response:
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    if isinstance(v, ObjectId):
+                        obj[k] = str(v)
+
+    if not isinstance(response, (list, int, str)):
         try:
             response = dict(response)
         except:
