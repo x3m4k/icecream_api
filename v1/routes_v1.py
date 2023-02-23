@@ -6,6 +6,7 @@ from libs.util import get_timestamp, walk_dict
 import bson
 from bson.objectid import ObjectId
 import inspect
+from pymongo import UpdateOne
 
 
 FORBIDDEN_DB_NAMES = ["admin", "local", "config"]
@@ -229,6 +230,51 @@ async def count_documents_v1(data: CountDocuments, res: Response):
     }
 
 
+# -- lite exclusive queries
+@app.post("/v1/lite/dump_transactions/")
+async def lite_dump_transactions_v1(data: LiteDumpTransactions, res: Response):
+    if data.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    await db_client[data.db][data.collection].bulk_write(
+        [
+            UpdateOne(
+                {"_id": int(obj[0])},
+                {"$push": {"history": {"$each": [obj[1]], "$slice": -500_000}}},
+                upsert=True,
+            )
+            for obj in data.data
+        ],
+        ordered=False,
+    )
+
+    return {"message": "ok"}
+
+
+@app.post("/v1/lite/delete_marries/")
+async def lite_delete_marries_v1(data: LiteDeleteMarries, res: Response):
+    if data.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    await db_client[data.db][data.collection].bulk_write(
+        [
+            UpdateOne(
+                {"_id": int(user_id)},
+                {"$unset": {f"{data.guild_id}.marry": ""}},
+            )
+            for user_id in data.data
+        ],
+        ordered=False,
+    )
+
+    return {"message": "ok"}
+
+
+# --
+
+
 # unsafe
 @app.post("/v1/query/")
 async def query_v1(query: DirectQuery, res: Response):
@@ -245,7 +291,7 @@ async def query_v1(query: DirectQuery, res: Response):
                 last_name = pt.rsplit(".", 1)[1]
                 container = walk_dict(cmd, pt.rsplit(".", 1)[0], None)
 
-                if not container:
+                if not container or not isinstance(container, dict):
                     continue
 
                 obj = container.get(last_name)
@@ -274,6 +320,6 @@ async def query_v1(query: DirectQuery, res: Response):
         try:
             response = dict(response)
         except:
-            response = {"empty": True}
+            response = {}
 
     return {"message": "ok", "response": response}

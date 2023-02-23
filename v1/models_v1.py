@@ -90,3 +90,16 @@ class DirectQuery(BaseModel):
     method: str
     data: list
     to_int64_fields: Optional[List[str]] = []
+
+
+class LiteDumpTransactions(BaseModel):
+    db: str
+    collection: str = "transactions"
+    data: list
+
+
+class LiteDeleteMarries(BaseModel):
+    db: str
+    collection: str = "users"
+    data: list
+    guild_id: int
