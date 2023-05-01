@@ -7,6 +7,7 @@ import bson
 from bson.objectid import ObjectId
 import inspect
 from pymongo import UpdateOne
+from libs.util import *
 
 
 FORBIDDEN_DB_NAMES = ["admin", "local", "config"]
@@ -228,6 +229,78 @@ async def count_documents_v1(data: CountDocuments, res: Response):
             data.pattern
         ),
     }
+
+
+# -- f5 exclusive queries
+
+
+@app.post("/v1/f5/tsearch/")
+async def f5_tsearch_v1(data: F5TSearch, res: Response):
+    if data.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    db = db_client[data.db]
+
+    user_skipped = (
+        walk_dict(
+            await db[data.user_skipped_coll].find_one(
+                {"_id": data.user_id}, {data.user_skipped_game: 1}
+            ),
+            data.user_skipped_game,
+            {},
+        )
+        or {}
+    )
+
+    total_documents = []
+
+    async for doc in db[data.collection].aggregate(data.pipeline, allowDiskUse=True):
+        prof_data = walk_dict(doc, data.walk_to_game, {})
+        global_data = walk_dict(doc, data.walk_to_global, {})
+
+        if global_data.get("ban", None):
+            until = global_data.get("ban", {}).get("until", None)
+            if not until is None and (until == -1 or until > get_utc_timestamp()):
+                continue
+
+        created_at = prof_data.get("created_at", 0)
+
+        user_skipped_data = user_skipped.get(str(doc["_id"]), {})
+
+        if user_skipped_data:
+            unskip_at = user_skipped_data.get("unskip_at", 0)
+
+            if user_skipped_data.get("skip_at", None) == created_at or (
+                get_utc_timestamp() <= unskip_at
+            ):
+                continue
+
+        total_documents.append(doc)
+        break
+
+    try:
+        user = total_documents[0]
+    except:
+        user = None
+
+    if data.exclude_global_fields:
+        for f in data.exclude_global_fields:
+            try:
+                del global_data[f]
+            except:
+                pass
+
+    if user != None:
+        global_data["_id"] = doc["_id"]
+        response = {"user": {"profile": prof_data, "global": global_data}}
+    else:
+        response = {}
+
+    return {"message": "ok", "response": response}
+
+
+# --
 
 
 # -- lite exclusive queries

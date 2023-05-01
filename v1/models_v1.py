@@ -103,3 +103,15 @@ class LiteDeleteMarries(BaseModel):
     collection: str = "users"
     data: list
     guild_id: int
+
+
+class F5TSearch(BaseModel):
+    db: str
+    collection: str = "users"
+    walk_to_global: str
+    walk_to_game: str
+    user_id: int
+    pipeline: list
+    user_skipped_coll: str = "tsearch_skip"
+    user_skipped_game: str
+    exclude_global_fields: Optional[List[str]] = []

@@ -11,6 +11,10 @@ def get_timestamp(tz_name: str = "America/New_York") -> float:
     return datetime.now().astimezone(pytz.timezone(tz_name)).timestamp()
 
 
+def get_utc_timestamp() -> float:
+    return datetime.now().astimezone(pytz.utc).timestamp()
+
+
 def walk_dict(d, fields: str, default: Optional[Any] = None) -> Any:
     if isinstance(fields, str):
         fields = iter(f for f in fields.split(".") if f)
