@@ -4,5 +4,29 @@
     "minecraft:golden_apple": {"ru": "Золотое яблоко"},
     "minecraft:golden_carrot": {"ru": "Золотая морковь"},
     "minecraft:cookie": {"ru": "Печенье"},
-    "minecraft:cake": {"ru": "Торт"}
+    "minecraft:cake": {"ru": "Торт"},
+    "minecraft:music_disc_13": {"ru": "Пластинка C418 - 13"},
+    "minecraft:music_disc_cat": {"ru": "Пластинка C418 - cat"},
+    "minecraft:music_disc_blocks": {"ru": "Пластинка C418 - blocks"},
+    "minecraft:music_disc_chirp": {"ru": "Пластинка C418 - chirp"},
+    "minecraft:music_disc_far": {"ru": "Пластинка C418 - far"},
+    "minecraft:music_disc_mall": {"ru": "Пластинка C418 - mall"},
+    "minecraft:music_disc_mellohi": {"ru": "Пластинка C418 - mellohi"},
+    "minecraft:music_disc_stal": {"ru": "Пластинка C418 - stal"},
+    "minecraft:music_disc_strad": {"ru": "Пластинка C418 - strad"},
+    "minecraft:music_disc_ward": {"ru": "Пластинка C418 - ward"},
+    "minecraft:music_disc_wait": {"ru": "Пластинка C418 - wait"},
+    "minecraft:music_disc_11": {"ru": "Пластинка C418 - 11"},
+    "minecraft:music_disc_otherside": {"ru": "Пластинка Лена Рейн - otherside"},
+    "minecraft:music_disc_pigstep": {"ru": "Пластинка Лена Рейн - Pigstep"},
+    "minecraft:music_disc_5": {"ru": "Пластинка Самуэль Оберг - 5"},
+    "minecraft:totem_of_undying": {"ru": "Тотем бессмертия"},
+    "minecraft:sticky_piston": {"ru": "Липкий поршень"},
+    "minecraft:piston": {"ru": "Поршень"},
+    "minecraft:redstone_block": {"ru": "Редстоуновый блок"},
+    "minecraft:hopper": {"ru": "Воронка"},
+    "minecraft:slime_block": {"ru": "Блок слизи"},
+    "minecraft:honey_block": {"ru": "Блок мёда"}
+
+
 }
