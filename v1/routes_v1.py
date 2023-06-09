@@ -300,6 +300,72 @@ async def f5_tsearch_v1(data: F5TSearch, res: Response):
     return {"message": "ok", "response": response}
 
 
+@app.post("/v1/f5/dating_search/")
+async def f5_dating_search_v1(data: F5DatingSearch, res: Response):
+    if data.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    db = db_client[data.db]
+
+    user_skipped = (
+        walk_dict(
+            await db[data.user_skipped_coll].find_one(
+                {"_id": data.user_id}, {"dating": 1}
+            ),
+            "dating",
+            {},
+        )
+        or {}
+    )
+
+    total_documents = []
+
+    async for doc in db[data.collection].aggregate(data.pipeline, allowDiskUse=True):
+        user_data = walk_dict(doc, data.walk_to_data, {})
+        global_data = walk_dict(doc, data.walk_to_global, {})
+
+        if global_data.get("ban", None):
+            until = global_data.get("ban", {}).get("until", None)
+            if not until is None and (until == -1 or until > get_utc_timestamp()):
+                continue
+
+        edited_at = user_data.get("edited_at", 0)
+
+        user_skipped_data = user_skipped.get(str(doc["_id"]), {})
+
+        if user_skipped_data:
+            unskip_at = user_skipped_data.get("unskip_at", 0)
+
+            if user_skipped_data.get("skip_at", None) == edited_at or (
+                get_utc_timestamp() <= unskip_at
+            ):
+                continue
+
+        total_documents.append(doc)
+        break
+
+    try:
+        user = total_documents[0]
+    except:
+        user = None
+
+    # if data.exclude_global_fields:
+    #     for f in data.exclude_global_fields:
+    #         try:
+    #             del global_data[f]
+    #         except:
+    #             pass
+
+    if user != None:
+        # global_data["_id"] = doc["_id"]
+        response = {"user": {"_id": user["_id"], **user_data}}
+    else:
+        response = {}
+
+    return {"message": "ok", "response": response}
+
+
 # --
 
 

@@ -13,7 +13,7 @@ async def root():
     return {"message": "ok"}
 
 
-from v1 import routes_v1
+from v1 import routes_v1, other_routes_v1
 import database
 import uvicorn
 
@@ -23,9 +23,9 @@ if __name__ == "__main__":
     server_config = uvicorn.Config(
         "main:app",
         reload=True if is_debug else False,
-        host="127.0.0.1",
+        host="127.0.0.1" if is_debug else "0.0.0.0",
         port=config.get("port", 8000),
-        log_level="info" if is_debug else "warning",
+        log_level="info",# if is_debug else "warning",
     )
 
     server = uvicorn.Server(server_config)

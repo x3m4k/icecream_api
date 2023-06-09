@@ -115,3 +115,13 @@ class F5TSearch(BaseModel):
     user_skipped_coll: str = "tsearch_skip"
     user_skipped_game: str
     exclude_global_fields: Optional[List[str]] = []
+
+
+class F5DatingSearch(BaseModel):
+    db: str
+    collection: str = "users"
+    walk_to_data: str
+    walk_to_global: str
+    user_id: int
+    pipeline: list
+    user_skipped_coll: str = "dating_skip"
