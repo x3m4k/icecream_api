@@ -215,7 +215,11 @@ async def mc_yasno_process_ore_award(data: MCYasnoProcessOreAward):
             award_data["balance_bonus"].get("max", 0),
         )
 
-    response["balance"] = balance_bonus
+    response["balance"] = balance_bonus / 4
+
+    if response["balance"] % 1 == 0:
+        response["balance"] = int(response["balance"])
+
     response["amount"] = amount
 
     inc_fields = {"balance": response["balance"]}
@@ -289,6 +293,7 @@ async def mc_yasno_update_sync(data: MCYasnoUpdateSync):
                 }
             }
         },
+        True,
     )
 
 
@@ -306,15 +311,15 @@ async def mc_yasno_get_inv(data: MCYasnoGetInv):
         or {}
     )
 
-    inv_len = len(inventory_db)
-
     page = data.page
 
     inventory = [
-        (translate_mc_item(i, "ru"), n)
-        for i, n in list(inventory_db.items())[page * 10 : page * 10 + 10]
-        if n > 0
+        (translate_mc_item(i, "ru"), n) for i, n in list(inventory_db.items()) if n > 0
     ]
+
+    inv_len = len(inventory)
+
+    inventory = inventory[page * 10 : page * 10 + 10]
 
     return {
         "inventory": inventory,
@@ -356,6 +361,7 @@ async def mc_yasno_get_inv_item(data: MCYasnoGetInvItem):
     await db_client[YASNO_DB][YASNO_COLL].update_one(
         {"_id": user_id},
         {"$inc": {f"{YASNO_GUILD_ID}.other.mc_yasno.inv.{item[0]}": -amount}},
+        True,
     )
     return {
         "success": True,

@@ -92,6 +92,14 @@ class DirectQuery(BaseModel):
     to_int64_fields: Optional[List[str]] = []
 
 
+class BulkWrite(BaseModel):
+    db: str
+    collection: str
+    operations: dict
+    ordered: bool = False
+    upsert: bool = True
+
+
 class LiteDumpTransactions(BaseModel):
     db: str
     collection: str = "transactions"

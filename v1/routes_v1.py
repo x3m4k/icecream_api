@@ -6,7 +6,7 @@ from libs.util import get_timestamp, walk_dict
 import bson
 from bson.objectid import ObjectId
 import inspect
-from pymongo import UpdateOne
+from pymongo import UpdateOne as pymongo_UpdateOne
 from libs.util import *
 
 
@@ -378,7 +378,7 @@ async def lite_dump_transactions_v1(data: LiteDumpTransactions, res: Response):
 
     await db_client[data.db][data.collection].bulk_write(
         [
-            UpdateOne(
+            pymongo_UpdateOne(
                 {"_id": int(obj[0])},
                 {"$push": {"history": {"$each": [obj[1]], "$slice": -500_000}}},
                 upsert=True,
@@ -399,7 +399,7 @@ async def lite_delete_marries_v1(data: LiteDeleteMarries, res: Response):
 
     await db_client[data.db][data.collection].bulk_write(
         [
-            UpdateOne(
+            pymongo_UpdateOne(
                 {"_id": int(user_id)},
                 {"$unset": {f"{data.guild_id}.marry": ""}},
             )
@@ -462,3 +462,24 @@ async def query_v1(query: DirectQuery, res: Response):
             response = {}
 
     return {"message": "ok", "response": response}
+
+
+@app.post("/v1/bulk_write/")
+async def bulk_write_v1(data: BulkWrite, res: Response):
+    if data.db in FORBIDDEN_DB_NAMES:
+        res.status_code = status.HTTP_400_BAD_REQUEST
+        return {"message": "Wrong db name."}
+
+    bulk_write = []
+    for operation in data.operations:
+        for fdata in data.operations[operation]:
+            if operation == "UpdateOne":
+                bulk_write.append(
+                    pymongo_UpdateOne({"_id": fdata[0]}, fdata[1], upsert=data.upsert)
+                )
+
+    await db_client[data.db][data.collection].bulk_write(
+        bulk_write, ordered=data.ordered
+    )
+
+    return {"message": "ok"}
